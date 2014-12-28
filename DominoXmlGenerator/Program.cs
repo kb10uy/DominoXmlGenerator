@@ -88,7 +88,12 @@ namespace DominoXmlGenerator
                 }
                 crootact(raw.Skip(1).ToList());
             }
-            doc.Save(outname);
+            //doc.Save(outname);
+            using(var fs=new FileStream(outname,FileMode.OpenOrCreate,FileAccess.Write))
+            using (var sw = new StreamWriter(fs, Encoding.GetEncoding(932)))
+            {
+                doc.Save(sw);
+            }
         }
 
         XmlElement cim;
@@ -216,10 +221,10 @@ namespace DominoXmlGenerator
             switch (list[0])
             {
                 case ".Name":
-                    cdmpb.SetAttribute("Name", list[1]);
+                    cdmpbt.SetAttribute("Name", list[1]);
                     return;
                 case ".Key":
-                    cdmpb.SetAttribute("Key", list[1]);
+                    cdmpbt.SetAttribute("Key", list[1]);
                     return;
             }
         }
@@ -269,6 +274,23 @@ namespace DominoXmlGenerator
                     ccfc = doc.CreateElement("CCM");
                     ccf.Peek().AppendChild(ccfc);
                     break;
+                case "CCMLink":
+                    while (ccf.Count > ccfl) ccf.Pop();
+                    ccfa = ProcessControlChangeMacrosCcmLink;
+                    ccfcl = doc.CreateElement("CCMLink");
+                    ccf.Peek().AppendChild(ccfcl);
+                    break;
+                case "FolderLink":
+                    while (ccf.Count > ccfl) ccf.Pop();
+                    ccfa = ProcessControlChangeMacrosFolderLink;
+                    ccffl = doc.CreateElement("FolderLink");
+                    ccf.Peek().AppendChild(ccffl);
+                    break;
+                case "Table":
+                    ccfa = ProcessControlChangeMacrosTable;
+                    ccfct = doc.CreateElement("Table");
+                    ccf.Peek().AppendChild(ccfct);
+                    break;
                 case "Folder":
                     while (ccf.Count > ccfl) ccf.Pop();
                     ccfa = ProcessControlChangeMacrosFolder;
@@ -279,6 +301,59 @@ namespace DominoXmlGenerator
             }
             ccfl++;
             ccfa(list.Skip(1).ToList());
+        }
+
+        XmlElement ccfct;
+        private void ProcessControlChangeMacrosTable(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Id":
+                    ccfct.SetAttribute("ID", list[1]);
+                    return;
+                case "Entry":
+                    ccfcve = doc.CreateElement("Table");
+                    ccfct.AppendChild(ccfcve);
+                    break;
+            }
+            ProcessControlChangeMacrosCcmEntry(list.Skip(1).ToList());
+        }
+
+        XmlElement ccfcl;
+        private void ProcessControlChangeMacrosCcmLink(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Id":
+                    ccfcl.SetAttribute("ID", list[1]);
+                    return;
+                case ".Value":
+                    ccfcl.SetAttribute("Value", list[1]);
+                    return;
+                case ".Gate":
+                    ccfcl.SetAttribute("Gate", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement ccffl;
+        private void ProcessControlChangeMacrosFolderLink(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Name":
+                    ccffl.SetAttribute("Name", list[1]);
+                    return;
+                case ".Id":
+                    ccffl.SetAttribute("ID", list[1]);
+                    return;
+                case ".Value":
+                    ccffl.SetAttribute("Value", list[1]);
+                    return;
+                case ".Gate":
+                    ccffl.SetAttribute("Gate", list[1]);
+                    return;
+            }
         }
 
         XmlElement ccfc;
@@ -357,11 +432,11 @@ namespace DominoXmlGenerator
                     ccfcv.AppendChild(ccfcve);
                     break;
             }
-            ProcessControlChangeMacrosCcmValueEntry(list.Skip(1).ToList());
+            ProcessControlChangeMacrosCcmEntry(list.Skip(1).ToList());
         }
 
         XmlElement ccfcve;
-        private void ProcessControlChangeMacrosCcmValueEntry(IReadOnlyList<string> list)
+        private void ProcessControlChangeMacrosCcmEntry(IReadOnlyList<string> list)
         {
             switch (list[0])
             {
@@ -401,25 +476,11 @@ namespace DominoXmlGenerator
                     ccfcg.SetAttribute("TableId", list[1]);
                     return;
                 case "Entry":
-                    ccfcge = doc.CreateElement("Entry");
-                    ccfcg.AppendChild(ccfcge);
+                    ccfcve = doc.CreateElement("Entry");
+                    ccfcg.AppendChild(ccfcve);
                     break;
             }
-            ProcessControlChangeMacrosCcmGateEntry(list.Skip(1).ToList());
-        }
-
-        XmlElement ccfcge;
-        private void ProcessControlChangeMacrosCcmGateEntry(IReadOnlyList<string> list)
-        {
-            switch (list[0])
-            {
-                case ".Label":
-                    ccfcge.SetAttribute("Label", list[1]);
-                    return;
-                case ".Value":
-                    ccfcge.SetAttribute("Value", list[1]);
-                    return;
-            }
+            ProcessControlChangeMacrosCcmEntry(list.Skip(1).ToList());
         }
 
         Action<IReadOnlyList<string>> cta;
@@ -444,7 +505,6 @@ namespace DominoXmlGenerator
             }
             ctfl++;
             cta(list.Skip(1).ToList());
-            //TODO: Link系とTableの対応
         }
 
         Action<IReadOnlyList<string>> ctfa;
@@ -509,6 +569,7 @@ namespace DominoXmlGenerator
                     ctt.AppendChild(m);
                     return;
             }
+            ctta(list.Skip(1).ToList());
         }
 
         XmlElement cttc;
@@ -534,23 +595,258 @@ namespace DominoXmlGenerator
             switch (list[0])
             {
                 case ".PC":
-                    cttp.SetAttribute("ID", list[1]);
+                    cttp.SetAttribute("PC", list[1]);
                     return;
                 case ".MSB":
-                    cttp.SetAttribute("Value", list[1]);
+                    cttp.SetAttribute("MSB", list[1]);
                     return;
                 case ".LSB":
-                    cttp.SetAttribute("Gate", list[1]);
+                    cttp.SetAttribute("LSB", list[1]);
                     return;
                 case ".Mode":
-                    cttp.SetAttribute("Gate", list[1]);
+                    cttp.SetAttribute("Mode", list[1]);
                     return;
             }
         }
 
+        Action<IReadOnlyList<string>> cdea;
         private void ProcessDefaults(IReadOnlyList<string> list)
         {
+            switch (list[0])
+            {
+                case "Track":
+                    cdea = ProcessDefaultsTrack;
+                    cdet = doc.CreateElement("Track");
+                    defl.AppendChild(cdet);
+                    break;
+            }
+            cdea(list.Skip(1).ToList());
+        }
 
+        Action<IReadOnlyList<string>> cdeta;
+        XmlElement cdet;
+        private void ProcessDefaultsTrack(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Name":
+                    cdet.SetAttribute("Name", list[1]);
+                    return;
+                case ".Channel":
+                    cdet.SetAttribute("Ch", list[1]);
+                    return;
+                case ".Mode":
+                    cdet.SetAttribute("Mode", list[1]);
+                    return;
+                case "Time":
+                    cdeta = ProcessDefaultsTrackTime;
+                    cdett = doc.CreateElement("TimeSignature");
+                    cdet.AppendChild(cdett);
+                    break;
+                case "Key":
+                    cdeta = ProcessDefaultsTrackKey;
+                    cdetk = doc.CreateElement("KeySignature");
+                    cdet.AppendChild(cdetk);
+                    break;
+                case "PC":
+                    cdeta = ProcessDefaultsTrackPc;
+                    cdetp = doc.CreateElement("PC");
+                    cdet.AppendChild(cdetp);
+                    break;
+                case "CC":
+                    cdeta = ProcessDefaultsTrackCc;
+                    cdetc = doc.CreateElement("CC");
+                    cdet.AppendChild(cdetc);
+                    break;
+                case "End":
+                    cdeta = ProcessDefaultsTrackEnd;
+                    cdete = doc.CreateElement("EOT");
+                    cdet.AppendChild(cdete);
+                    break;
+                case "Tempo":
+                    cdeta = ProcessDefaultsTrackTempo;
+                    cdette = doc.CreateElement("Tempo");
+                    cdet.AppendChild(cdette);
+                    break;
+                case "Mark":
+                    cdeta = ProcessDefaultsTrackMark;
+                    cdetm = doc.CreateElement("Mark");
+                    cdet.AppendChild(cdetm);
+                    break;
+                case "Comment":
+                    cdeta = ProcessDefaultsTrackComment;
+                    cdetcm = doc.CreateElement("Comment");
+                    cdet.AppendChild(cdetcm);
+                    break;
+                case "Template":
+                    cdeta = ProcessDefaultsTrackTemplate;
+                    cdettm = doc.CreateElement("Template");
+                    cdet.AppendChild(cdettm);
+                    break;
+            }
+            cdeta(list.Skip(1).ToList());
+        }
+
+        XmlElement cdetm;
+        private void ProcessDefaultsTrackMark(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Name":
+                    cdetm.SetAttribute("Name", list[1]);
+                    return;
+                case ".Tick":
+                    cdetm.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdetm.SetAttribute("Step", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdete;
+        private void ProcessDefaultsTrackEnd(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Tick":
+                    cdete.SetAttribute("Tick", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdette;
+        private void ProcessDefaultsTrackTempo(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Tempo":
+                    cdette.SetAttribute("Tempo", list[1]);
+                    return;
+                case ".Tick":
+                    cdette.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdette.SetAttribute("Step", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdett;
+        private void ProcessDefaultsTrackTime(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Signature":
+                    cdett.SetAttribute("TimeSignature", list[1]);
+                    return;
+                case ".Tick":
+                    cdett.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdett.SetAttribute("Step", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdetk;
+        private void ProcessDefaultsTrackKey(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Signature":
+                    cdetk.SetAttribute("KeySignature", list[1]);
+                    return;
+                case ".Tick":
+                    cdetk.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdetk.SetAttribute("Step", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdetc;
+        private void ProcessDefaultsTrackCc(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Id":
+                    cdetc.SetAttribute("ID", list[1]);
+                    return;
+                case ".Value":
+                    cdetc.SetAttribute("Value", list[1]);
+                    return;
+                case ".Gate":
+                    cdetc.SetAttribute("Gate", list[1]);
+                    return;
+                case ".Tick":
+                    cdetc.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdetc.SetAttribute("Step", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdetp;
+        private void ProcessDefaultsTrackPc(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Number":
+                    cdetp.SetAttribute("PC", list[1]);
+                    return;
+                case ".MSB":
+                    cdetp.SetAttribute("MSB", list[1]);
+                    return;
+                case ".LSB":
+                    cdetp.SetAttribute("LSB", list[1]);
+                    return;
+                case ".Mode":
+                    cdetp.SetAttribute("Mode", list[1]);
+                    return;
+                case ".Tick":
+                    cdetp.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdetp.SetAttribute("Step", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdetcm;
+        private void ProcessDefaultsTrackComment(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Text":
+                    cdetcm.SetAttribute("Text", list[1]);
+                    return;
+                case ".Tick":
+                    cdetcm.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdetcm.SetAttribute("Step", list[1]);
+                    return;
+            }
+        }
+
+        XmlElement cdettm;
+        private void ProcessDefaultsTrackTemplate(IReadOnlyList<string> list)
+        {
+            switch (list[0])
+            {
+                case ".Id":
+                    cdettm.SetAttribute("ID", list[1]);
+                    return;
+                case ".Tick":
+                    cdettm.SetAttribute("Tick", list[1]);
+                    return;
+                case ".Step":
+                    cdettm.SetAttribute("Step", list[1]);
+                    return;
+            }
         }
     }
 }
